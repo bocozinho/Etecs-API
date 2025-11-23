@@ -2,7 +2,7 @@ const express = require('express');
 const app = express();
 const PORT = 3000;
 
-const etecs = require('./Etec-API-Scraping/etecs.json');
+const etecs = require('./etecs.json');
 
 app.use(express.json());
 
@@ -120,3 +120,4 @@ app.get('/busca/etec', (req, res) => {
 app.listen(PORT, () => {
   console.log(`Servidor rodando em http://localhost:${PORT}`);
 });
+
