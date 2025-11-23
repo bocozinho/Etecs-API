@@ -5,8 +5,12 @@ const PORT = 3000;
 
 app.use(express.json());
 
+const etecs = require('./etecs.json');
 
 async function buscarDadosEtecs() {
+  return etecs;
+}
+
  
   return []; 
 }
@@ -63,4 +67,5 @@ app.get('/etecs/cursos', async (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`Servidor rodando em http://localhost:${PORT}`);
+
 });
