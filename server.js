@@ -1,83 +1,122 @@
 const express = require('express');
 const app = express();
 const PORT = 3000;
-const etecs = require('./etecs.json');
+
+const etecs = require('./Etec-API-Scraping/etecs.json');
 
 app.use(express.json());
 
-// Função pra normalizar textos (remove acentos, espaços extras e deixa tudo lowercase)
+// Normaliza textos (remove acentos, espaços extras, deixa lowercase)
 function normalizarTexto(texto) {
   return texto
     .toLowerCase()
-    .normalize('NFD') 
-    .replace(/[\u0300-\u036f]/g, '') 
-    .replace(/\s+/g, ' ') 
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ')
     .trim();
 }
 
-// Função que retorna os dados
-async function buscarDadosEtecs() {
-  return etecs;
+// Formata ETEC para saída limpa
+function formatarEtec(etec) {
+  return {
+    name: etec.name,
+    id: etec.id,
+    link: etec.link,
+    endereco: etec.endereco,
+    cep: etec.cep,
+    cidade: etec.cidade,
+    estado: etec.estado,
+    telefone: etec.telefone,
+    email: etec.email,
+    site: etec.site,
+    totalCursos: etec.cursos ? etec.cursos.length : 0,
+    cursos: etec.cursos ? etec.cursos.map(c => ({
+      nome: c.nome,
+      link: c.link,
+      periodo: c.periodo,
+      vagas: c.vagas
+    })) : []
+  };
 }
 
-// Rota raiz
+const etecsFormatadas = etecs.map(formatarEtec);
+
+
 app.get('/', (req, res) => {
-  res.send('Servidor de API ETECs rodando. Use /etecs ou /etecs/cursos para filtrar.');
+  res.send('Servidor de API ETECs rodando. Use /etecs, /cursos ou /busca para filtrar.');
 });
 
-// Rota para todas as ETECs
-app.get('/etecs', async (req, res) => {
-  try {
-    const dados = await buscarDadosEtecs();
-    res.status(200).json(dados);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ erro: 'Falha ao buscar dados da API.' });
+// Listar todas as ETECs
+app.get('/etecs', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.send(JSON.stringify(etecsFormatadas, null, 2));
+});
+
+// Listar todos os cursos únicos
+app.get('/cursos', (req, res) => {
+  const cursosSet = new Set();
+  etecsFormatadas.forEach(etec => {
+    etec.cursos.forEach(c => cursosSet.add(c.nome));
+  });
+  res.setHeader('Content-Type', 'application/json');
+  res.send(JSON.stringify([...cursosSet], null, 2));
+});
+
+// Busca por cidade (substring)
+app.get('/busca/cidade', (req, res) => {
+  const { cidade } = req.query;
+  if (!cidade) return res.status(400).json({ erro: 'Informe a cidade' });
+
+  const cidadeFormatada = normalizarTexto(cidade);
+  const resultados = etecsFormatadas.filter(etec =>
+    etec.cidade && normalizarTexto(etec.cidade).includes(cidadeFormatada)
+  );
+
+  if (!resultados.length) {
+    return res.status(404).json({ mensagem: 'Nenhuma ETEC encontrada para esta cidade.' });
   }
+
+  res.setHeader('Content-Type', 'application/json');
+  res.send(JSON.stringify(resultados, null, 2));
 });
 
-// Rota filtrando por cidade e/ou curso
-app.get('/etecs/cursos', async (req, res) => {
-  try {
-    const { cidade, curso } = req.query;
-    let resultados = await buscarDadosEtecs();
+// Busca por curso (substring)
+app.get('/busca/curso', (req, res) => {
+  const { curso } = req.query;
+  if (!curso) return res.status(400).json({ erro: 'Informe o curso' });
 
-    // Filtra por cidade
-    if (cidade) {
-      const cidadeFormatada = normalizarTexto(cidade);
-      resultados = resultados.filter(etec => 
-        etec.cidade && normalizarTexto(etec.cidade).includes(cidadeFormatada)
-      );
-    }
+  const cursoFormatado = normalizarTexto(curso);
+  const resultados = etecsFormatadas.filter(etec =>
+    etec.cursos && etec.cursos.some(c => normalizarTexto(c.nome).includes(cursoFormatado))
+  );
 
-    // Filtra por curso
-    if (curso) {
-      const cursoFormatado = normalizarTexto(curso);
-      resultados = resultados.filter(etec => 
-        etec.cursos && etec.cursos.some(c => normalizarTexto(c.nome).includes(cursoFormatado))
-      );
-    }
-
-    // Retorno
-    if (resultados.length > 0) {
-      res.status(200).json({
-        filtros: { cidade: cidade || null, curso: curso || null },
-        total_encontrado: resultados.length,
-        dados: resultados
-      });
-    } else {
-      res.status(404).json({
-        filtros: { cidade: cidade || null, curso: curso || null },
-        mensagem: 'Nenhuma unidade encontrada com os filtros fornecidos.'
-      });
-    }
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ erro: 'Falha no servidor ao processar o filtro.' });
+  if (!resultados.length) {
+    return res.status(404).json({ mensagem: 'Nenhuma ETEC oferece este curso.' });
   }
+
+  res.setHeader('Content-Type', 'application/json');
+  res.send(JSON.stringify(resultados, null, 2));
 });
 
-// Inicia o servidor
+// Busca por nome da ETEC (substring)
+app.get('/busca/etec', (req, res) => {
+  const { nome } = req.query;
+  if (!nome) return res.status(400).json({ erro: 'Informe o nome da ETEC' });
+
+  const nomeFormatado = normalizarTexto(nome);
+  const resultados = etecsFormatadas.filter(etec =>
+    etec.name && normalizarTexto(etec.name).includes(nomeFormatado)
+  );
+
+  if (!resultados.length) {
+    return res.status(404).json({ mensagem: 'Nenhuma ETEC encontrada com esse nome.' });
+  }
+
+  res.setHeader('Content-Type', 'application/json');
+  res.send(JSON.stringify(resultados, null, 2));
+});
+
+// Inicia servidor
 app.listen(PORT, () => {
   console.log(`Servidor rodando em http://localhost:${PORT}`);
 });
