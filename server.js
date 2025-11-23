@@ -46,6 +46,12 @@ app.get('/', (req, res) => {
   res.send('Servidor de API ETECs rodando. Use /etecs, /cursos ou /busca para filtrar.');
 });
 
+//Lista todos os dados
+app.get('/all', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.send(JSON.stringify(etecsFormatadas, null, 2));
+});
+
 // Listar todas as ETECs
 app.get('/etecs', (req, res) => {
   res.setHeader('Content-Type', 'application/json');
@@ -120,4 +126,5 @@ app.get('/busca/etec', (req, res) => {
 app.listen(PORT, () => {
   console.log(`Servidor rodando em http://localhost:${PORT}`);
 });
+
 
