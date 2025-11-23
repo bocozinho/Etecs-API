@@ -11,9 +11,6 @@ async function buscarDadosEtecs() {
   return etecs;
 }
 
- 
-  return []; 
-}
 
 app.get('/', (req, res) => {
   res.send('Servidor de API ETECs rodando. Acesse /etecs ou /etecs/cursos para filtrar.');
@@ -69,3 +66,4 @@ app.listen(PORT, () => {
   console.log(`Servidor rodando em http://localhost:${PORT}`);
 
 });
+
