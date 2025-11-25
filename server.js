@@ -58,6 +58,21 @@ app.get('/etecs', (req, res) => {
   res.send(JSON.stringify(etecsFormatadas, null, 2));
 });
 
+// Lista todas as cidades que contém ETECs
+app.get('/cidades', (req, res) => {
+  const cidadesSet = new Set(); 
+  etecsFormatadas.forEach(etec => {
+    if (etec.cidade) {
+      cidadesSet.add(etec.cidade);
+    }
+  });
+  
+  const cidadesUnicas = [...cidadesSet].sort();
+  
+  res.setHeader('Content-Type', 'application/json');
+  res.send(JSON.stringify(cidadesUnicas, null, 2));
+});
+
 // Listar todos os cursos únicos
 app.get('/cursos', (req, res) => {
   const cursosSet = new Set();
@@ -126,5 +141,6 @@ app.get('/busca/etec', (req, res) => {
 app.listen(PORT, () => {
   console.log(`Servidor rodando em http://localhost:${PORT}`);
 });
+
 
 
