@@ -3,14 +3,11 @@ const app = express();
 const PORT = 3000;
 
 const etecs = require('./etecs.json');
-
-// 🔥 ADICIONAR CORS - ESSENCIAL PARA O FRONT-END FUNCIONAR
 const cors = require('cors');
-app.use(cors()); // Habilita CORS para todas as rotas
+app.use(cors()); 
 
 app.use(express.json());
 
-// Normaliza textos (remove acentos, espaços extras, deixa lowercase)
 function normalizarTexto(texto) {
   return texto
     .toLowerCase()
@@ -51,12 +48,11 @@ app.get('/', (req, res) => {
 
 // Lista todos os dados
 app.get('/all', (req, res) => {
-  res.json(etecsFormatadas); // Usar res.json() em vez de res.send()
+  res.json(etecsFormatadas);
 });
 
 // Listar todas as ETECs
 app.get('/etecs', (req, res) => {
-  // Retornar apenas os nomes das ETECs como especificado na documentação
   const nomesEtecs = etecsFormatadas.map(etec => etec.name);
   res.json(nomesEtecs);
 });
